@@ -1,0 +1,1 @@
+Repository for some of the bash scripts I use to manage files and perform repeated tasks on my server. Some scripts are omitted for security purposes, and there are quite a few things that are just part of my config.fish file (functions, abbreviations, etc) but otherwise this contains many of the things that I use often. 
