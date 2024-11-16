@@ -14,37 +14,38 @@ do
 	esac
 done
 
-last_dns=$(tail -1 /etc/self-signed_certs/extfile.cnf | grep -o -E '[0-9]+') 
-((last_dns++)) # the subdomain should be added with the last DNS value + 1 in the extfile.cnf file
+# Check if the subdomain already exists in the extfile.cnf
+extfile="/etc/self-signed_certs/extfile.cnf"
+if ! grep -q "$new_subdomain.serber" "$extfile"; then
+    # Increment the DNS number and update the extfile.cnf
+    last_dns=$(tail -1 "$extfile" | grep -o -E '[0-9]+')
+    ((last_dns++)) # the subdomain should be added with the last DNS value + 1 in the extfile.cnf file
 
-echo "DNS.$last_dns = $new_subdomain.serber" >> /etc/self-signed_certs/extfile.cnf
+    echo "DNS.$last_dns = $new_subdomain.serber" >> "$extfile"
+    echo "Subdomain $new_subdomain.serber has been added to $extfile."
+else
+    echo "Subdomain $new_subdomain.serber already exists in $extfile."
+fi
 
-openssl x509 -req -sha256 -days 36500 -in /etc/self-signed_certs/cert.csr -CA /etc/self-signed_certs/ca.pem -CAkey /etc/self-signed_certs/ca-key.pem -out /etc/self-signed_certs/cert.pem -extfile /etc/self-signed_certs/extfile.cnf -extensions v3_req -CAcreateserial
+# Re-generate the SSL certificate (this always runs)
+openssl x509 -req -sha256 -days 36500 -in /etc/self-signed_certs/cert.csr -CA /etc/self-signed_certs/ca.pem -CAkey /etc/self-signed_certs/ca-key.pem -out /etc/self-signed_certs/cert.pem -extfile "$extfile" -extensions v3_req -CAcreateserial
+if [ $? -ne 0 ]; then
+    echo "Certificate regeneration failed. Exiting."
+    exit 1
+fi
 
-## configure nginx sites-available file
-echo "server {" >> /etc/nginx/sites-available/local-services
-echo "    listen 80;" >> /etc/nginx/sites-available/local-services
-echo "    server_name $new_subdomain.serber;" >> /etc/nginx/sites-available/local-services
-echo "" >> /etc/nginx/sites-available/local-services
-echo "    return 301 https://\$host\$request_uri;" >> /etc/nginx/sites-available/local-services
-echo "}" >> /etc/nginx/sites-available/local-services
-echo "" >> /etc/nginx/sites-available/local-services
-echo "server {" >> /etc/nginx/sites-available/local-services
-echo "    listen 443 ssl;" >> /etc/nginx/sites-available/local-services
-echo "    server_name $new_subdomain.serber;" >> /etc/nginx/sites-available/local-services
-echo "" >> /etc/nginx/sites-available/local-services
-echo "    ssl_certificate /etc/self-signed_certs/cert.pem;" >> /etc/nginx/sites-available/local-services
-echo "    ssl_certificate_key /etc/self-signed_certs/cert-key.pem;" >> /etc/nginx/sites-available/local-services
-echo "" >> /etc/nginx/sites-available/local-services
-echo "    location / {" >> /etc/nginx/sites-available/local-services
-echo "        proxy_pass http://localhost:$port;" >> /etc/nginx/sites-available/local-services
-echo "        proxy_set_header Host \$host;" >> /etc/nginx/sites-available/local-services
-echo "        proxy_set_header X-Real-IP \$remote_addr;" >> /etc/nginx/sites-available/local-services
-echo "        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;" >> /etc/nginx/sites-available/local-services
-echo "        proxy_set_header X-Forwarded-Proto \$scheme;" >> /etc/nginx/sites-available/local-services
-echo "    }" >> /etc/nginx/sites-available/local-services
-echo "}" >> /etc/nginx/sites-available/local-services
-echo "" >> /etc/nginx/sites-available/local-services
+# Add the upstream configuration to Nginx config
+nginx_config_file="/etc/nginx/sites-available/local-services"
+
+# Check if the subdomain is already in the Nginx configuration
+if ! grep -q "if (\$host = $new_subdomain.serber)" "$nginx_config_file"; then
+    # Use `sed` to insert the new block before `proxy_pass $upstream;`
+    sed -i "/proxy_pass \$upstream;/i \                if (\$host = $new_subdomain.serber) {\n                    set \$upstream \"http://127.0.0.1:$port\";\n                }\n" "$nginx_config_file"
+
+    echo "Upstream configuration for $new_subdomain.serber has been added to $nginx_config_file."
+else
+    echo "Subdomain $new_subdomain.serber already exists in the Nginx configuration."
+fi
 
 ufw allow $port
 

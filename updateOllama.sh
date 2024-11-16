@@ -6,6 +6,7 @@ if [ "$EUID" -ne 0 ]
         exit
 fi
 
+echo "Updating Ollama"
 systemctl stop ollama.service 
 curl https://ollama.ai/install.sh | sh 
 systemctl restart ollama.service
