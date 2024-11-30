@@ -7,4 +7,4 @@ if [ "$EUID" -ne 0 ]
 fi
 
 cd /opt/VueTorrent
-git pull
+git fetch && git pull
