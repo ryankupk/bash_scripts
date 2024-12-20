@@ -21,9 +21,7 @@ fi
 echo "Changing to application directory: $APP_DIR"
 cd "$APP_DIR" || error_exit "Failed to change to directory: $APP_DIR"
 
-# Pull latest 
-git fetch && git pull
+sudo docker compose pull
 
-# Restart service
-systemctl restart jellyseerr.service
+sudo docker compose up -d
 
