@@ -14,6 +14,8 @@ do
 	esac
 done
 
+echo "Adding subdomain $new_subdomain to extfile and nginx configuration"
+
 # Check if the subdomain already exists in the extfile.cnf
 extfile="/etc/self-signed_certs/extfile.cnf"
 if ! grep -q "$new_subdomain.serber" "$extfile"; then

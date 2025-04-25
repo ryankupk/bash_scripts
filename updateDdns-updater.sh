@@ -27,6 +27,8 @@ if [ -z "$release_url" ]; then
     usage
 fi
 
+echo "Updating ddns-updater"
+
 # Change to the correct directory
 cd /opt/ddns-updater/ || { echo "Error: Unable to change directory to /opt/ddns-updater/"; exit 1; }
 

@@ -17,8 +17,9 @@ if [ "$(id -u)" -ne 0 ]; then
     error_exit "This script must be run as root or with sudo privileges."
 fi
 
+echo "Updating jellyseerr"
+
 # Change to the application directory
-echo "Changing to application directory: $APP_DIR"
 cd "$APP_DIR" || error_exit "Failed to change to directory: $APP_DIR"
 
 sudo docker compose pull

@@ -12,6 +12,8 @@ do
         esac
 done
 
+echo "Updating navidrome"
+
 zip_filename="${release_url##*/}"
 cd /opt/navidrome/ || exit 1
 wget "$release_url" --output-document "$zip_filename"

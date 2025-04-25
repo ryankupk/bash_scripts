@@ -6,5 +6,7 @@ if [ "$EUID" -ne 0 ]
         exit
 fi
 
+echo "Upating vuetorrent"
+
 cd /opt/VueTorrent
 git fetch && git pull
